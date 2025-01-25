@@ -15,7 +15,7 @@ namespace EDLTests
         {
             for (int i = 0; i < 6; i++)
             {
-                byte[] GPTLUN = Firehose.Read((uint)i);
+                byte[] GPTLUN = Firehose.Read(StorageType.UFS, (uint)i, 4096, 0, 5);
                 if (GPTLUN != null)
                 {
                     using MemoryStream stream = new(GPTLUN);
