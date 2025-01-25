@@ -34,10 +34,10 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
 
         public static QualcommFirehoseXmlElements.Data[] GetDataPayloads(string commandPacket)
         {
-            ConsoleColor original = Console.ForegroundColor;
+            /*ConsoleColor original = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine(commandPacket);
-            Console.ForegroundColor = original;
+            Console.ForegroundColor = original;*/
 
             commandPacket = commandPacket.Replace("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>", "");
             commandPacket = $"<dataArray>{commandPacket}</dataArray>";

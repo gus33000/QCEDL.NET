@@ -34,9 +34,38 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             this.Serial = Serial;
         }
 
+        public byte[] GetFirehoseXMLResponseBuffer(bool WaitTilFooter = false)
+        {
+            if (!WaitTilFooter)
+            {
+                return Serial.GetResponse(null);
+            }
+
+            List<byte> bufferList = [];
+
+            do
+            {
+                bufferList.Add(Serial.GetResponse(null, Length: 1)[0]);
+            } while (bufferList.Count < 10 || Encoding.UTF8.GetString([.. bufferList.TakeLast(10)]) != " /></data>");
+
+            byte[] ResponseBuffer = [.. bufferList];
+
+            return ResponseBuffer;
+        }
+
+        public QualcommFirehoseXmlElements.Data[] GetFirehoseResponseDataPayloads(bool WaitTilFooter = false)
+        {
+            byte[] ResponseBuffer = GetFirehoseXMLResponseBuffer(WaitTilFooter);
+            string Incoming = Encoding.UTF8.GetString(ResponseBuffer);
+
+            QualcommFirehoseXmlElements.Data[] datas = QualcommFirehoseXml.GetDataPayloads(Incoming);
+
+            return datas;
+        }
+
         public byte[] Read()
         {
-            Console.WriteLine("Getting Storage Info");
+            Console.WriteLine("Read");
 
             string Command03 = QualcommFirehoseXml.BuildCommandPacket([
                 new QualcommFirehoseXmlElements.Data()
@@ -57,33 +86,26 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             Serial.SendData(Encoding.UTF8.GetBytes(Command03));
 
             bool RawMode = false;
-            string Incoming;
-            int size = 0x64;
-            
-            do
+            bool GotResponse = false;
+
+            while (!GotResponse)
             {
-                byte[] ResponseBuffer = Serial.GetResponse(null, Length: size);
-                Incoming = Encoding.UTF8.GetString(ResponseBuffer);
-
-                size = 0x5D;
-
-                Console.WriteLine("------------------------");
-
-                QualcommFirehoseXmlElements.Data[] datas = QualcommFirehoseXml.GetDataPayloads(Incoming);
+                QualcommFirehoseXmlElements.Data[] datas = GetFirehoseResponseDataPayloads(true);
 
                 foreach (QualcommFirehoseXmlElements.Data data in datas)
                 {
                     if (data.Log != null)
                     {
-                        Console.WriteLine(data.Log.Value);
+                        Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
                     }
                     else if (data.Response != null)
                     {
                         if (data.Response.RawMode)
                         {
                             RawMode = true;
-                            break;
                         }
+
+                        GotResponse = true;
                     }
                     else
                     {
@@ -97,27 +119,37 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                         Console.WriteLine(sww.ToString());
                     }
                 }
-
-                Console.WriteLine("------------------------");
             }
-            while (Incoming.IndexOf("response value") < 0 && RawMode == false);
+
+            if (!RawMode)
+            {
+                Console.WriteLine("Error: Raw mode not enabled");
+                return null;
+            }
 
             byte[] readBuffer = Serial.GetResponse(null, Length: 3 * 4096);
 
-            Incoming = null;
-            do
+            RawMode = false;
+            GotResponse = false;
+
+            while (!GotResponse)
             {
-                Incoming = Encoding.UTF8.GetString(Serial.GetResponse(null));
-
-                Console.WriteLine("------------------------");
-
-                QualcommFirehoseXmlElements.Data[] datas = QualcommFirehoseXml.GetDataPayloads(Incoming);
+                QualcommFirehoseXmlElements.Data[] datas = GetFirehoseResponseDataPayloads();
 
                 foreach (QualcommFirehoseXmlElements.Data data in datas)
                 {
                     if (data.Log != null)
                     {
-                        Console.WriteLine(data.Log.Value);
+                        Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                    }
+                    else if (data.Response != null)
+                    {
+                        if (data.Response.RawMode)
+                        {
+                            RawMode = true;
+                        }
+
+                        GotResponse = true;
                     }
                     else
                     {
@@ -131,10 +163,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                         Console.WriteLine(sww.ToString());
                     }
                 }
-
-                Console.WriteLine("------------------------");
             }
-            while (Incoming.IndexOf("response value") < 0);
 
             return readBuffer;
         }
@@ -155,20 +184,27 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
 
             Serial.SendData(Encoding.UTF8.GetBytes(Command03));
 
-            string Incoming;
-            do
+            bool RawMode = false;
+            bool GotResponse = false;
+
+            while (!GotResponse)
             {
-                Incoming = Encoding.UTF8.GetString(Serial.GetResponse(null));
-
-                Console.WriteLine("------------------------");
-
-                QualcommFirehoseXmlElements.Data[] datas = QualcommFirehoseXml.GetDataPayloads(Incoming);
+                QualcommFirehoseXmlElements.Data[] datas = GetFirehoseResponseDataPayloads();
 
                 foreach (QualcommFirehoseXmlElements.Data data in datas)
                 {
                     if (data.Log != null)
                     {
-                        Console.WriteLine(data.Log.Value);
+                        Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                    }
+                    else if (data.Response != null)
+                    {
+                        if (data.Response.RawMode)
+                        {
+                            RawMode = true;
+                        }
+
+                        GotResponse = true;
                     }
                     else
                     {
@@ -182,10 +218,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                         Console.WriteLine(sww.ToString());
                     }
                 }
-
-                Console.WriteLine("------------------------");
             }
-            while (Incoming.IndexOf("response value") < 0);
 
             // Workaround for problem
             // SerialPort is sometimes not disposed correctly when the device is already removed.
@@ -213,20 +246,27 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
 
             Serial.SendData(Encoding.UTF8.GetBytes(Command03));
 
-            string Incoming;
-            do
+            bool RawMode = false;
+            bool GotResponse = false;
+
+            while (!GotResponse)
             {
-                Incoming = Encoding.UTF8.GetString(Serial.GetResponse(null));
-
-                Console.WriteLine("------------------------");
-
-                QualcommFirehoseXmlElements.Data[] datas = QualcommFirehoseXml.GetDataPayloads(Incoming);
+                QualcommFirehoseXmlElements.Data[] datas = GetFirehoseResponseDataPayloads();
 
                 foreach (QualcommFirehoseXmlElements.Data data in datas)
                 {
                     if (data.Log != null)
                     {
-                        Console.WriteLine(data.Log.Value);
+                        Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                    }
+                    else if (data.Response != null)
+                    {
+                        if (data.Response.RawMode)
+                        {
+                            RawMode = true;
+                        }
+
+                        GotResponse = true;
                     }
                     else
                     {
@@ -240,10 +280,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                         Console.WriteLine(sww.ToString());
                     }
                 }
-
-                Console.WriteLine("------------------------");
             }
-            while (Incoming.IndexOf("response value") < 0);
 
             return true;
         }

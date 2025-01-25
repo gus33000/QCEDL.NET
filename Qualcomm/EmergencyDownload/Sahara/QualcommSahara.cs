@@ -122,9 +122,15 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Sahara
             List<byte[]> RootKeyHashes = [];
 
             int Size = 0x20;
+
             if (Response.Length % 0x30 == 0)
             {
                 Size = 0x30;
+            }
+
+            if (Response.Length % 0x20 == 0)
+            {
+                Size = 0x20;
             }
 
             for (int i = 0; i < Response.Length / Size; i++)

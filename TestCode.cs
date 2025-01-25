@@ -2,9 +2,8 @@
 using EDLTests.Qualcomm.EmergencyDownload.Sahara;
 using EDLTests.Qualcomm.EmergencyDownload.Transport;
 using System.Globalization;
-using System.Text;
-using System.Xml;
 using System.Xml.Serialization;
+using System.Xml;
 
 namespace EDLTests
 {
@@ -63,7 +62,7 @@ namespace EDLTests
             return Result;
         }
 
-        public static bool ConnectToProgrammer(QualcommSerial Serial, byte[] PacketFromPcToProgrammer)
+        public static bool ConnectToProgrammer(QualcommSerial Serial, QualcommFirehose Firehose, byte[] PacketFromPcToProgrammer)
         {
             // Behaviour of old firehose:
             // Takes about 20 ms to be started.
@@ -81,7 +80,6 @@ namespace EDLTests
 
             int HelloSendCount = 0;
             bool HandshakeCompleted = false;
-            string Incoming;
             do
             {
                 Serial.SetTimeOut(200);
@@ -105,25 +103,93 @@ namespace EDLTests
                 try
                 {
                     Serial.SetTimeOut(500);
-                    Incoming = Encoding.ASCII.GetString(Serial.GetResponse(null));
-                    Console.WriteLine("In: " + Incoming);
-                    Serial.SetTimeOut(200);
-                    if (Incoming.Contains("Chip serial num"))
+                    QualcommFirehoseXmlElements.Data[] datas = Firehose.GetFirehoseResponseDataPayloads();
+
+                    foreach (QualcommFirehoseXmlElements.Data data in datas)
                     {
-                        Incoming = Encoding.ASCII.GetString(Serial.GetResponse(null));
-                        Console.WriteLine($"In: {Incoming}");
+                        if (data.Log != null)
+                        {
+                            Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                        }
+                        else if (data.Response != null)
+                        {
+
+                        }
+                        else
+                        {
+                            XmlSerializer xmlSerializer = new(typeof(QualcommFirehoseXmlElements.Data));
+
+                            using StringWriter sww = new();
+                            using XmlWriter writer = XmlWriter.Create(sww);
+
+                            xmlSerializer.Serialize(writer, data);
+
+                            Console.WriteLine(sww.ToString());
+                        }
+                    }
+
+                    Serial.SetTimeOut(200);
+                    if (datas.Any(x => x.Log?.Value?.Contains("Chip serial num") == true))
+                    {
+                        datas = Firehose.GetFirehoseResponseDataPayloads();
+
+                        foreach (QualcommFirehoseXmlElements.Data data in datas)
+                        {
+                            if (data.Log != null)
+                            {
+                                Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                            }
+                            else if (data.Response != null)
+                            {
+
+                            }
+                            else
+                            {
+                                XmlSerializer xmlSerializer = new(typeof(QualcommFirehoseXmlElements.Data));
+
+                                using StringWriter sww = new();
+                                using XmlWriter writer = XmlWriter.Create(sww);
+
+                                xmlSerializer.Serialize(writer, data);
+
+                                Console.WriteLine(sww.ToString());
+                            }
+                        }
+
                         Console.WriteLine("Incoming Hello-packets received");
                     }
 
-                    while (Incoming.IndexOf("response value") < 0)
+                    while (!datas.Any(x => x.Response != null))
                     {
-                        Incoming = Encoding.ASCII.GetString(Serial.GetResponse(null));
-                        Console.WriteLine($"In: {Incoming}");
+                        datas = Firehose.GetFirehoseResponseDataPayloads();
+
+                        foreach (QualcommFirehoseXmlElements.Data data in datas)
+                        {
+                            if (data.Log != null)
+                            {
+                                Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                            }
+                            else if (data.Response != null)
+                            {
+
+                            }
+                            else
+                            {
+                                XmlSerializer xmlSerializer = new(typeof(QualcommFirehoseXmlElements.Data));
+
+                                using StringWriter sww = new();
+                                using XmlWriter writer = XmlWriter.Create(sww);
+
+                                xmlSerializer.Serialize(writer, data);
+
+                                Console.WriteLine(sww.ToString());
+                            }
+                        }
                     }
 
                     Console.WriteLine("Incoming Hello-response received");
 
-                    if (!Incoming.Contains("Failed to authenticate Digital Signature."))
+                    if (!datas.Any(x => x.Log?.Value?.Contains("Failed to authenticate Digital Signature.") == true))
                     {
                         HandshakeCompleted = true;
                     }
@@ -142,7 +208,7 @@ namespace EDLTests
             return HandshakeCompleted;
         }
 
-        public static bool ConnectToProgrammerInTestMode(QualcommSerial Serial)
+        public static bool ConnectToProgrammerInTestMode(QualcommSerial Serial, QualcommFirehose Firehose)
         {
             byte[] HelloPacketFromPcToProgrammer = new byte[0x20C];
             ByteOperations.WriteUInt32(HelloPacketFromPcToProgrammer, 0, 0x57503730);     // WP70
@@ -150,7 +216,7 @@ namespace EDLTests
             ByteOperations.WriteUInt32(HelloPacketFromPcToProgrammer, 0x208, 0x57503730); // WP70
             ByteOperations.WriteUInt16(HelloPacketFromPcToProgrammer, 0x48, 0x4445);      // DE
 
-            bool HandshakeCompleted = ConnectToProgrammer(Serial, HelloPacketFromPcToProgrammer);
+            bool HandshakeCompleted = ConnectToProgrammer(Serial, Firehose, HelloPacketFromPcToProgrammer);
 
             if (HandshakeCompleted)
             {
@@ -201,10 +267,15 @@ namespace EDLTests
 
         internal static async Task TestProgrammer(string DevicePath, string ProgrammerPath)
         {
-            Console.WriteLine("TestProgrammer");
+            Console.WriteLine("START TestProgrammer");
+
             try
             {
+                Console.WriteLine();
+
                 Console.WriteLine("Starting Firehose Test");
+
+                Console.WriteLine();
 
                 // Send and start programmer
                 QualcommSerial Serial = new(DevicePath);
@@ -240,27 +311,43 @@ namespace EDLTests
 
                 Sahara.SwitchMode(QualcommSaharaMode.ImageTXPending);
 
+                Console.WriteLine();
+
                 if (!await Sahara.LoadProgrammer(ProgrammerPath))
                 {
                     Console.WriteLine("Emergency programmer test failed");
                 }
                 else
                 {
-                    while (true)
+                    Console.WriteLine();
+
+                    QualcommFirehose Firehose = new(Serial);
+
+                    //ConnectToProgrammerInTestMode(Serial, Firehose);
+
+                    bool RawMode = false;
+                    bool GotResponse = false;
+
+                    try
                     {
-                        try
+                        while (!GotResponse)
                         {
-                            string Incoming = Encoding.ASCII.GetString(Serial.GetResponse(null));
-
-                            Console.WriteLine("------------------------");
-
-                            QualcommFirehoseXmlElements.Data[] datas = QualcommFirehoseXml.GetDataPayloads(Incoming);
+                            QualcommFirehoseXmlElements.Data[] datas = Firehose.GetFirehoseResponseDataPayloads();
 
                             foreach (QualcommFirehoseXmlElements.Data data in datas)
                             {
                                 if (data.Log != null)
                                 {
-                                    Console.WriteLine(data.Log.Value);
+                                    Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                                }
+                                else if (data.Response != null)
+                                {
+                                    if (data.Response.RawMode)
+                                    {
+                                        RawMode = true;
+                                    }
+
+                                    GotResponse = true;
                                 }
                                 else
                                 {
@@ -274,30 +361,28 @@ namespace EDLTests
                                     Console.WriteLine(sww.ToString());
                                 }
                             }
-
-                            Console.WriteLine("------------------------");
-                        }
-                        catch (BadConnectionException e)
-                        {
-                            break;
                         }
                     }
-
-                    //ConnectToProgrammerInTestMode(Serial);
-
-                    QualcommFirehose Firehose = new(Serial);
+                    catch (BadConnectionException e) { }
 
                     Firehose.GetStorageInfo();
 
                     byte[] GPTLUN0 = Firehose.Read();
-                    File.WriteAllBytes(@"C:\Users\gus33\Documents\GPT_LUN0_TESTING.bin", GPTLUN0);
+                    if (GPTLUN0 != null)
+                    {
+                        File.WriteAllBytes(@"C:\Users\gus33\Documents\GPT_LUN0_TESTING.bin", GPTLUN0);
+                    }
 
                     if (Firehose.Reset())
                     {
+                        Console.WriteLine();
+
                         Console.WriteLine("Emergency programmer test succeeded");
                     }
                     else
                     {
+                        Console.WriteLine();
+
                         Console.WriteLine("Emergency programmer test failed");
                     }
                 }
@@ -308,7 +393,9 @@ namespace EDLTests
             }
             finally
             {
-                Console.WriteLine("TestProgrammer");
+                Console.WriteLine();
+
+                Console.WriteLine("END TestProgrammer");
             }
         }
     }

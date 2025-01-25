@@ -326,7 +326,9 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             [XmlEnum(Name = "off")]
             Off,
             [XmlEnum(Name = "reset-to-edl")]
-            ResetToEDL
+            ResetToEDL,
+            [XmlEnum(Name = "emergency")]
+            Emergency
         }
 
         public enum StorageType
