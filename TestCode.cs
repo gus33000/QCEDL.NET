@@ -221,9 +221,13 @@ namespace EDLTests
                     string RKHAsString = Convert.ToHexString(RKH);
                     string FriendlyName = "Unknown";
 
-                    if (RKHAsString.Equals("D40EEE56F3194665574109A39267724AE7944134CD53CB767E293D3C40497955BC8A4519FF992B031FADC6355015AC87"))
+                    foreach (KeyValuePair<string, string> element in KnownPKData.KnownOEMPKHashes)
                     {
-                        FriendlyName = "secboot_sha2_pss_subca2";
+                        if (element.Value == RKHAsString)
+                        {
+                            FriendlyName = element.Key;
+                            break;
+                        }
                     }
 
                     Console.WriteLine($"RKH[{i}]: {RKHAsString} ({FriendlyName})");
