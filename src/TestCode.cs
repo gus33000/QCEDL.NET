@@ -51,11 +51,11 @@ namespace EDLTests
             return PartitionTable.GPT.ReadFromStream(stream, (int)sectorSize);
         }
 
-        internal static void ReadGPTs(QualcommFirehose Firehose)
+        internal static void ReadGPTs(QualcommFirehose Firehose, StorageType storageType)
         {
             for (int i = 0; i < 10; i++)
             {
-                PartitionTable.GPT GPT = ReadGPT(Firehose, StorageType.SDCC, (uint)i);
+                PartitionTable.GPT GPT = ReadGPT(Firehose, storageType, (uint)i);
 
                 if (GPT == null)
                 {
@@ -175,7 +175,7 @@ namespace EDLTests
                     catch (BadConnectionException) { }
 
                     Firehose.GetStorageInfo(StorageType.SDCC);
-                    ReadGPTs(Firehose);
+                    ReadGPTs(Firehose, StorageType.SDCC);
 
                     if (Firehose.Reset())
                     {
