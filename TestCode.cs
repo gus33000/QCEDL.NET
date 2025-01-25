@@ -1,29 +1,70 @@
 ﻿using EDLTests.Qualcomm.EmergencyDownload.Firehose;
+using EDLTests.Qualcomm.EmergencyDownload.Firehose.Xml.Elements;
 using EDLTests.Qualcomm.EmergencyDownload.Sahara;
 using EDLTests.Qualcomm.EmergencyDownload.Transport;
 using EDLTests.Qualcomm.EmergencyDownload.ChipInfo;
 using System.Xml.Serialization;
 using System.Xml;
 using System.Text;
-using EDLTests.Qualcomm.EmergencyDownload.Firehose.Xml.Elements;
 
 namespace EDLTests
 {
     internal class TestCode
     {
+        internal static byte[] ReadGPTBuffer(QualcommFirehose Firehose, StorageType storageType, uint physicalPartition)
+        {
+            uint sectorSize = 4096;
+
+            if (storageType == StorageType.NVME)
+            {
+                sectorSize = 512;
+            }
+            else if (storageType == StorageType.SDCC)
+            {
+                sectorSize = 512;
+            }
+
+            return Firehose.Read(storageType, physicalPartition, sectorSize, 0, 5);
+        }
+
+        internal static PartitionTable.GPT ReadGPT(QualcommFirehose Firehose, StorageType storageType, uint physicalPartition)
+        {
+            uint sectorSize = 4096;
+
+            if (storageType == StorageType.NVME)
+            {
+                sectorSize = 512;
+            }
+            else if (storageType == StorageType.SDCC)
+            {
+                sectorSize = 512;
+            }
+
+            byte[] GPTLUN = ReadGPTBuffer(Firehose, storageType, physicalPartition);
+
+            if (GPTLUN == null)
+            {
+                return null;
+            }
+            
+            using MemoryStream stream = new(GPTLUN);
+            return PartitionTable.GPT.ReadFromStream(stream, (int)sectorSize);
+        }
+
         internal static void ReadGPTs(QualcommFirehose Firehose)
         {
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 10; i++)
             {
-                byte[] GPTLUN = Firehose.Read(StorageType.UFS, (uint)i, 4096, 0, 5);
-                if (GPTLUN != null)
-                {
-                    using MemoryStream stream = new(GPTLUN);
-                    PartitionTable.GPT GPT = PartitionTable.GPT.ReadFromStream(stream, 4096);
+                PartitionTable.GPT GPT = ReadGPT(Firehose, StorageType.UFS, (uint)i);
 
-                    Console.WriteLine($"LUN {i}:");
-                    PrintGPTPartitions(GPT);
+                if (GPT == null)
+                {
+                    Console.WriteLine($"LUN {i}: No GPT found");
+                    continue;
                 }
+
+                Console.WriteLine($"LUN {i}:");
+                PrintGPTPartitions(GPT);
             }
         }
 

@@ -74,7 +74,7 @@
         {
             Console.WriteLine("Qualcomm Emergency Download 9008 device detected");
 
-            TestCode.TestProgrammer(DevicePath, @"C:\Users\gus33\Documents\prog_firehose_ddr.elf").Wait();
+            TestCode.TestProgrammer(DevicePath, @"C:\Users\gus33\Documents\prog_firehose_lite.elf").Wait();
         }
     }
 }
