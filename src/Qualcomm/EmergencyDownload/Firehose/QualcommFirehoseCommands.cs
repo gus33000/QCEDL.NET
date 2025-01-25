@@ -13,19 +13,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             Console.WriteLine("Read");
 
             string Command03 = QualcommFirehoseXml.BuildCommandPacket([
-                new Data()
-                {
-                    Read = new Read()
-                    {
-                        PhysicalPartitionNumber = LUNi,
-                        StorageType = storageType,
-                        Slot = 0,
-                        SectorSizeInBytes = sectorSize,
-                        StartSector = FirstSector.ToString(),
-                        LastSector = LastSector,
-                        NumPartitionSectors = (LastSector - FirstSector + 1).ToString()
-                    }
-                }
+                QualcommFirehoseXmlPackets.GetReadPacket(storageType, LUNi, sectorSize, FirstSector, LastSector)
             ]);
 
             Firehose.Serial.SendData(Encoding.UTF8.GetBytes(Command03));
@@ -118,14 +106,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             Console.WriteLine("Rebooting phone");
 
             string Command03 = QualcommFirehoseXml.BuildCommandPacket([
-                new Data()
-                {
-                    Power = new Power()
-                    {
-                        Value = powerValue,
-                        DelayInSeconds = delayInSeconds
-                    }
-                }
+                QualcommFirehoseXmlPackets.GetPowerPacket(powerValue, delayInSeconds)
             ]);
 
             Firehose.Serial.SendData(Encoding.UTF8.GetBytes(Command03));
@@ -179,15 +160,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             Console.WriteLine("Getting Storage Info");
 
             string Command03 = QualcommFirehoseXml.BuildCommandPacket([
-                new Data()
-                {
-                    GetStorageInfo = new GetStorageInfo()
-                    {
-                        //PhysicalPartitionNumber = 0,
-                        StorageType = storageType,
-                        //Slot = 0
-                    }
-                }
+                QualcommFirehoseXmlPackets.GetStorageInfoPacket(storageType)
             ]);
 
             Firehose.Serial.SendData(Encoding.UTF8.GetBytes(Command03));
