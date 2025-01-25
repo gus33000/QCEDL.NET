@@ -113,7 +113,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             return readBuffer;
         }
 
-        public static bool Reset(this QualcommFirehose Firehose, PowerValue powerValue = PowerValue.Reset, uint delayInSeconds = 100)
+        public static bool Reset(this QualcommFirehose Firehose, PowerValue powerValue = PowerValue.Reset, uint delayInSeconds = 1)
         {
             Console.WriteLine("Rebooting phone");
 
