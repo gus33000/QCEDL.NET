@@ -1,6 +1,6 @@
-﻿namespace EDLTests.Qualcomm.EmergencyDownload.Sahara
+﻿namespace EDLTests.Qualcomm.EmergencyDownload.ChipInfo
 {
-    internal enum QualcommPartNumbers
+    internal enum QualcommPartNumbers : uint
     {
         MDM9250 = 0x032,
         MDM9255 = 0x034,

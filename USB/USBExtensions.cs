@@ -29,7 +29,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace EDLTests
+namespace EDLTests.USB
 {
     internal class USBExtensions
     {
@@ -37,10 +37,10 @@ namespace EDLTests
         {
             List<(string, string)> deviceInfos = [];
 
-            IntPtr deviceInfoSet = IntPtr.Zero;
+            nint deviceInfoSet = nint.Zero;
             try
             {
-                deviceInfoSet = SetupDiGetClassDevs(ref guid, IntPtr.Zero, IntPtr.Zero,
+                deviceInfoSet = SetupDiGetClassDevs(ref guid, nint.Zero, nint.Zero,
                     DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
                 if (deviceInfoSet == INVALID_HANDLE_VALUE)
                 {
@@ -59,7 +59,7 @@ namespace EDLTests
                     // The size is 28 bytes for 32-bit code and 32 bytes for 64-bit code.
                     deviceInterfaceData.cbSize = Marshal.SizeOf(deviceInterfaceData);
 
-                    bool success = SetupDiEnumDeviceInterfaces(deviceInfoSet, IntPtr.Zero, ref guid, memberIndex, ref deviceInterfaceData);
+                    bool success = SetupDiEnumDeviceInterfaces(deviceInfoSet, nint.Zero, ref guid, memberIndex, ref deviceInterfaceData);
 
                     // Find out if a device information set was retrieved.
                     if (!success)
@@ -79,17 +79,17 @@ namespace EDLTests
                     success = SetupDiGetDeviceInterfaceDetail
                         (deviceInfoSet,
                         ref deviceInterfaceData,
-                        IntPtr.Zero,
+                        nint.Zero,
                         0,
                         ref bufferSize,
-                        IntPtr.Zero);
+                        nint.Zero);
 
                     if (!success && Marshal.GetLastWin32Error() != ERROR_INSUFFICIENT_BUFFER)
                     {
                         throw new Win32Exception("Failed to get interface details buffer size.");
                     }
 
-                    IntPtr detailDataBuffer = IntPtr.Zero;
+                    nint detailDataBuffer = nint.Zero;
                     try
                     {
                         // Allocate memory for the SP_DEVICE_INTERFACE_DETAIL_DATA structure using the returned buffer size.
@@ -97,7 +97,7 @@ namespace EDLTests
 
                         // Store cbSize in the first bytes of the array. The number of bytes varies with 32- and 64-bit systems.
 
-                        Marshal.WriteInt32(detailDataBuffer, (IntPtr.Size == 4) ? (4 + Marshal.SystemDefaultCharSize) : 8);
+                        Marshal.WriteInt32(detailDataBuffer, nint.Size == 4 ? 4 + Marshal.SystemDefaultCharSize : 8);
 
                         // Call SetupDiGetDeviceInterfaceDetail again.
                         // This time, pass a pointer to DetailDataBuffer
@@ -122,21 +122,21 @@ namespace EDLTests
 
                         // Skip over cbsize (4 bytes) to get the address of the devicePathName.
 
-                        IntPtr pDevicePathName = new(detailDataBuffer.ToInt64() + 4);
+                        nint pDevicePathName = new(detailDataBuffer.ToInt64() + 4);
                         string pathName = Marshal.PtrToStringUni(pDevicePathName);
 
                         // Get the String containing the devicePathName.
 
                         string BusName = GetBusName(pathName, deviceInfoSet, da);
-                        
+
                         deviceInfos.Add((pathName, BusName));
                     }
                     finally
                     {
-                        if (detailDataBuffer != IntPtr.Zero)
+                        if (detailDataBuffer != nint.Zero)
                         {
                             Marshal.FreeHGlobal(detailDataBuffer);
-                            detailDataBuffer = IntPtr.Zero;
+                            detailDataBuffer = nint.Zero;
                         }
                     }
                     memberIndex++;
@@ -144,7 +144,7 @@ namespace EDLTests
             }
             finally
             {
-                if (deviceInfoSet != IntPtr.Zero && deviceInfoSet != INVALID_HANDLE_VALUE)
+                if (deviceInfoSet != nint.Zero && deviceInfoSet != INVALID_HANDLE_VALUE)
                 {
                     SetupDiDestroyDeviceInfoList(deviceInfoSet);
                 }
@@ -153,7 +153,7 @@ namespace EDLTests
             return [.. deviceInfos];
         }
 
-        private static string GetBusName(string devicePath, IntPtr deviceInfoSet, SP_DEVINFO_DATA deviceInfoData)
+        private static string GetBusName(string devicePath, nint deviceInfoSet, SP_DEVINFO_DATA deviceInfoData)
         {
             string BusName = "";
 
@@ -168,7 +168,7 @@ namespace EDLTests
 
         // Heathcliff74
         // todo: is the queried data always available, or should we check ERROR_INVALID_DATA?
-        private static string GetStringProperty(IntPtr deviceInfoSet, SP_DEVINFO_DATA deviceInfoData, DEVPROPKEY property)
+        private static string GetStringProperty(nint deviceInfoSet, SP_DEVINFO_DATA deviceInfoData, DEVPROPKEY property)
         {
             byte[] buffer = GetProperty(deviceInfoSet, deviceInfoData, property, out uint propertyType);
             if (propertyType != 0x00000012) // DEVPROP_TYPE_STRING
@@ -181,7 +181,7 @@ namespace EDLTests
         }
 
         // Heathcliff74
-        private static byte[] GetProperty(IntPtr deviceInfoSet, SP_DEVINFO_DATA deviceInfoData, DEVPROPKEY property, out uint propertyType)
+        private static byte[] GetProperty(nint deviceInfoSet, SP_DEVINFO_DATA deviceInfoData, DEVPROPKEY property, out uint propertyType)
         {
             if (!SetupDiGetDeviceProperty(deviceInfoSet, ref deviceInfoData, ref property, out propertyType, null, 0, out int requiredSize, 0) && Marshal.GetLastWin32Error() != ERROR_INSUFFICIENT_BUFFER)
             {
@@ -198,57 +198,57 @@ namespace EDLTests
             return buffer;
         }
 
-        private const Int32 DIGCF_PRESENT = 2;
-        private const Int32 DIGCF_DEVICEINTERFACE = 0X10;
-        public static readonly IntPtr INVALID_HANDLE_VALUE = new(-1);
+        private const int DIGCF_PRESENT = 2;
+        private const int DIGCF_DEVICEINTERFACE = 0X10;
+        public static readonly nint INVALID_HANDLE_VALUE = new(-1);
         private const int ERROR_NO_MORE_ITEMS = 259;
         private const int ERROR_INSUFFICIENT_BUFFER = 122;
 
         private struct SP_DEVICE_INTERFACE_DATA
         {
-            internal Int32 cbSize;
+            internal int cbSize;
             internal Guid InterfaceClassGuid;
-            internal Int32 Flags;
-            internal IntPtr Reserved;
+            internal int Flags;
+            internal nint Reserved;
         }
 
         private struct SP_DEVINFO_DATA
         {
-            internal Int32 cbSize;
+            internal int cbSize;
             internal Guid ClassGuid;
-            internal Int32 DevInst;
-            internal IntPtr Reserved;
+            internal int DevInst;
+            internal nint Reserved;
         }
 
         // Device Property
         [StructLayout(LayoutKind.Sequential)]
         private unsafe struct DEVPROPKEY
         {
-            public DEVPROPKEY(Guid ifmtid, UInt32 ipid)
+            public DEVPROPKEY(Guid ifmtid, uint ipid)
             {
                 fmtid = ifmtid;
                 pid = ipid;
             }
             public Guid fmtid;
-            public UInt32 pid;
+            public uint pid;
         }
 
         [DllImport("setupapi.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern bool SetupDiGetDeviceInterfaceDetail(IntPtr DeviceInfoSet, ref SP_DEVICE_INTERFACE_DATA DeviceInterfaceData, IntPtr DeviceInterfaceDetailData, Int32 DeviceInterfaceDetailDataSize, ref Int32 RequiredSize, IntPtr DeviceInfoData);
+        private static extern bool SetupDiGetDeviceInterfaceDetail(nint DeviceInfoSet, ref SP_DEVICE_INTERFACE_DATA DeviceInterfaceData, nint DeviceInterfaceDetailData, int DeviceInterfaceDetailDataSize, ref int RequiredSize, nint DeviceInfoData);
 
         [DllImport("setupapi.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern bool SetupDiGetDeviceInterfaceDetail(IntPtr DeviceInfoSet, ref SP_DEVICE_INTERFACE_DATA DeviceInterfaceData, IntPtr DeviceInterfaceDetailData, Int32 DeviceInterfaceDetailDataSize, ref Int32 RequiredSize, ref SP_DEVINFO_DATA DeviceInfoData);
+        private static extern bool SetupDiGetDeviceInterfaceDetail(nint DeviceInfoSet, ref SP_DEVICE_INTERFACE_DATA DeviceInterfaceData, nint DeviceInterfaceDetailData, int DeviceInterfaceDetailDataSize, ref int RequiredSize, ref SP_DEVINFO_DATA DeviceInfoData);
 
         [DllImport("setupapi.dll", SetLastError = true)]
-        private static extern bool SetupDiEnumDeviceInterfaces(IntPtr DeviceInfoSet, IntPtr DeviceInfoData, ref Guid InterfaceClassGuid, Int32 MemberIndex, ref SP_DEVICE_INTERFACE_DATA DeviceInterfaceData);
+        private static extern bool SetupDiEnumDeviceInterfaces(nint DeviceInfoSet, nint DeviceInfoData, ref Guid InterfaceClassGuid, int MemberIndex, ref SP_DEVICE_INTERFACE_DATA DeviceInterfaceData);
 
         [DllImport("setupapi.dll", SetLastError = true)]
-        private static extern Int32 SetupDiDestroyDeviceInfoList(IntPtr DeviceInfoSet);
+        private static extern int SetupDiDestroyDeviceInfoList(nint DeviceInfoSet);
 
         [DllImport("setupapi.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern IntPtr SetupDiGetClassDevs(ref Guid ClassGuid, IntPtr Enumerator, IntPtr hwndParent, Int32 Flags);
+        private static extern nint SetupDiGetClassDevs(ref Guid ClassGuid, nint Enumerator, nint hwndParent, int Flags);
 
         [DllImport("setupapi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern unsafe bool SetupDiGetDeviceProperty(IntPtr deviceInfoSet, ref SP_DEVINFO_DATA DeviceInfoData, ref DEVPROPKEY propertyKey, out UInt32 propertyType, byte[] propertyBuffer, Int32 propertyBufferSize, out int requiredSize, UInt32 flags);
+        private static extern unsafe bool SetupDiGetDeviceProperty(nint deviceInfoSet, ref SP_DEVINFO_DATA DeviceInfoData, ref DEVPROPKEY propertyKey, out uint propertyType, byte[] propertyBuffer, int propertyBufferSize, out int requiredSize, uint flags);
     }
 }

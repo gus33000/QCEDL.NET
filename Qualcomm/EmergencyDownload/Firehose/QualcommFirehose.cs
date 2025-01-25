@@ -63,7 +63,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             return datas;
         }
 
-        public byte[] Read()
+        public byte[] Read(uint LUNi)
         {
             Console.WriteLine("Read");
 
@@ -72,13 +72,13 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                 {
                     Read = new QualcommFirehoseXmlElements.Read()
                     {
-                        PhysicalPartitionNumber = 0,
+                        PhysicalPartitionNumber = LUNi,
                         StorageType = QualcommFirehoseXmlElements.StorageType.UFS,
                         Slot = 0,
                         SectorSizeInBytes = 4096,
                         StartSector = "0",
-                        LastSector = 2,
-                        NumPartitionSectors = "3"
+                        LastSector = 7,
+                        NumPartitionSectors = "6"
                     }
                 }
             ]);
@@ -127,7 +127,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                 return null;
             }
 
-            byte[] readBuffer = Serial.GetResponse(null, Length: 3 * 4096);
+            byte[] readBuffer = Serial.GetResponse(null, Length: 6 * 4096);
 
             RawMode = false;
             GotResponse = false;

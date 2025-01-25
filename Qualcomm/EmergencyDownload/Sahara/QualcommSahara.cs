@@ -18,7 +18,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using EDLTests.Qualcomm.EmergencyDownload.Sahara.Command;
 using EDLTests.Qualcomm.EmergencyDownload.Transport;
+using System.ComponentModel.Design;
 
 namespace EDLTests.Qualcomm.EmergencyDownload.Sahara
 {
@@ -35,7 +37,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Sahara
             this.Serial = Serial;
         }
 
-        private static byte[] BuildCommandPacket(QualcommSaharaCommand SaharaCommand, byte[] CommandBuffer = null)
+        internal static byte[] BuildCommandPacket(QualcommSaharaCommand SaharaCommand, byte[] CommandBuffer = null)
         {
             uint CommandID = (uint)SaharaCommand;
             uint CommandBufferLength = 0;
@@ -82,81 +84,40 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Sahara
             return BuildCommandPacket(QualcommSaharaCommand.HelloResponse, Hello);
         }
 
-        private static byte[] BuildExecutePacket(uint RequestID)
+        private void SendData64Bit(FileStream FileStream, byte[] ReadDataRequest)
         {
-            byte[] Execute = new byte[0x04];
-            ByteOperations.WriteUInt32(Execute, 0x00, RequestID);
-            return BuildCommandPacket(QualcommSaharaCommand.Execute, Execute);
-        }
+            ulong ImageID = ByteOperations.ReadUInt64(ReadDataRequest, 0x08);
+            ulong Offset = ByteOperations.ReadUInt64(ReadDataRequest, 0x10);
+            ulong Length = ByteOperations.ReadUInt64(ReadDataRequest, 0x18);
 
-        private static byte[] BuildExecuteDataPacket(uint RequestID)
-        {
-            byte[] Execute = new byte[0x04];
-            ByteOperations.WriteUInt32(Execute, 0x00, RequestID);
-            return BuildCommandPacket(QualcommSaharaCommand.ExecuteData, Execute);
-        }
+            byte[] ImageBuffer = new byte[Length];
 
-        private byte[] GetCommandVariable(QualcommSaharaExecuteCommand command)
-        {
-            Serial.SendData(BuildExecutePacket((uint)command));
-
-            byte[] ReadDataRequest = Serial.GetResponse(null);
-            uint ResponseID = ByteOperations.ReadUInt32(ReadDataRequest, 0);
-
-            if (ResponseID != 0xE)
+            if (FileStream.Position != (uint)Offset)
             {
-                throw new BadConnectionException();
+                FileStream.Seek((uint)Offset, SeekOrigin.Begin);
             }
 
-            uint DataLength = ByteOperations.ReadUInt32(ReadDataRequest, 0x0C);
+            FileStream.Read(ImageBuffer, 0, (int)Length);
 
-            Serial.SendData(BuildExecuteDataPacket((uint)command));
-
-            return Serial.GetResponse(null, Length: (int)DataLength);
+            Serial.SendData(ImageBuffer);
         }
 
-        public byte[][] GetRKHs()
+        private void SendData(FileStream FileStream, byte[] ReadDataRequest)
         {
-            byte[] Response = GetCommandVariable(QualcommSaharaExecuteCommand.OemPKHashRead);
+            uint ImageID = ByteOperations.ReadUInt32(ReadDataRequest, 0x08);
+            uint Offset = ByteOperations.ReadUInt32(ReadDataRequest, 0x0C);
+            uint Length = ByteOperations.ReadUInt32(ReadDataRequest, 0x10);
 
-            List<byte[]> RootKeyHashes = [];
+            byte[] ImageBuffer = new byte[Length];
 
-            int Size = 0x20;
-
-            if (Response.Length % 0x30 == 0)
+            if (FileStream.Position != Offset)
             {
-                Size = 0x30;
+                FileStream.Seek(Offset, SeekOrigin.Begin);
             }
 
-            if (Response.Length % 0x20 == 0)
-            {
-                Size = 0x20;
-            }
+            FileStream.Read(ImageBuffer, 0, (int)Length);
 
-            for (int i = 0; i < Response.Length / Size; i++)
-            {
-                RootKeyHashes.Add(Response[(i * Size)..((i + 1) * Size)]);
-            }
-
-            return [.. RootKeyHashes];
-        }
-
-        public byte[] GetRKH()
-        {
-            byte[][] RKHs = GetRKHs();
-            return RKHs[0];
-        }
-
-        public byte[] GetHWID()
-        {
-            byte[] Response = GetCommandVariable(QualcommSaharaExecuteCommand.MsmHWIDRead);
-            return [.. Response.Reverse()];
-        }
-
-        public byte[] GetSerialNumber()
-        {
-            byte[] Response = GetCommandVariable(QualcommSaharaExecuteCommand.SerialNumRead);
-            return [.. Response.Reverse()];
+            Serial.SendData(ImageBuffer);
         }
 
         public bool SendImage(string Path)
@@ -188,64 +149,31 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Sahara
 
                 using FileStream FileStream = new(Path, FileMode.Open, FileAccess.Read);
 
-                while (true)
+                QualcommSaharaCommand CommandID = QualcommSaharaCommand.NoCommand;
+
+                while (CommandID != QualcommSaharaCommand.EndImageTX)
                 {
                     byte[] ReadDataRequest = Serial.GetResponse(null);
 
-                    QualcommSaharaCommand CommandID = (QualcommSaharaCommand)ByteOperations.ReadUInt32(ReadDataRequest, 0);
-
-                    bool Break = false;
+                    CommandID = (QualcommSaharaCommand)ByteOperations.ReadUInt32(ReadDataRequest, 0);
 
                     switch (CommandID)
                     {
                         // 32-Bit data request
                         case QualcommSaharaCommand.ReadData:
                             {
-                                uint ImageID = ByteOperations.ReadUInt32(ReadDataRequest, 0x08);
-                                uint Offset = ByteOperations.ReadUInt32(ReadDataRequest, 0x0C);
-                                uint Length = ByteOperations.ReadUInt32(ReadDataRequest, 0x10);
-
-                                if (ImageBuffer == null || ImageBuffer.Length != Length)
-                                {
-                                    ImageBuffer = new byte[Length];
-                                }
-
-                                if (FileStream.Position != Offset)
-                                {
-                                    FileStream.Seek(Offset, SeekOrigin.Begin);
-                                }
-
-                                FileStream.Read(ImageBuffer, 0, (int)Length);
-
-                                Serial.SendData(ImageBuffer);
-                                break;
-                            }
-                        // End Transfer
-                        case QualcommSaharaCommand.EndImageTX:
-                            {
-                                Break = true;
+                                SendData(FileStream, ReadDataRequest);
                                 break;
                             }
                         // 64-Bit data request
                         case QualcommSaharaCommand.ReadData64Bit:
                             {
-                                ulong ImageID = ByteOperations.ReadUInt64(ReadDataRequest, 0x08);
-                                ulong Offset = ByteOperations.ReadUInt64(ReadDataRequest, 0x10);
-                                ulong Length = ByteOperations.ReadUInt64(ReadDataRequest, 0x18);
-
-                                if (ImageBuffer == null || ImageBuffer.Length != (uint)Length)
-                                {
-                                    ImageBuffer = new byte[Length];
-                                }
-
-                                if (FileStream.Position != (uint)Offset)
-                                {
-                                    FileStream.Seek((uint)Offset, SeekOrigin.Begin);
-                                }
-
-                                FileStream.Read(ImageBuffer, 0, (int)Length);
-
-                                Serial.SendData(ImageBuffer);
+                                SendData64Bit(FileStream, ReadDataRequest);
+                                break;
+                            }
+                        // End Transfer
+                        case QualcommSaharaCommand.EndImageTX:
+                            {
                                 break;
                             }
                         default:
@@ -253,11 +181,6 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Sahara
                                 Console.WriteLine($"Unknown command: {CommandID.ToString("X8")}");
                                 throw new BadConnectionException();
                             }
-                    }
-
-                    if (Break)
-                    {
-                        break;
                     }
                 }
             }
@@ -430,6 +353,27 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Sahara
             await Task.Run(StartProgrammer);
 
             return true;
+        }
+
+
+        public byte[][] GetRKHs()
+        {
+            return Execute.GetRKHs(Serial);
+        }
+
+        public byte[] GetRKH()
+        {
+            return Execute.GetRKH(Serial);
+        }
+
+        public byte[] GetHWID()
+        {
+            return Execute.GetHWID(Serial);
+        }
+
+        public byte[] GetSerialNumber()
+        {
+            return Execute.GetSerialNumber(Serial);
         }
     }
 }
