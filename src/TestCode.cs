@@ -55,7 +55,7 @@ namespace EDLTests
         {
             for (int i = 0; i < 10; i++)
             {
-                PartitionTable.GPT GPT = ReadGPT(Firehose, StorageType.UFS, (uint)i);
+                PartitionTable.GPT GPT = ReadGPT(Firehose, StorageType.SDCC, (uint)i);
 
                 if (GPT == null)
                 {
@@ -174,7 +174,7 @@ namespace EDLTests
                     }
                     catch (BadConnectionException) { }
 
-                    Firehose.GetStorageInfo();
+                    Firehose.GetStorageInfo(StorageType.SDCC);
                     ReadGPTs(Firehose);
 
                     if (Firehose.Reset())
