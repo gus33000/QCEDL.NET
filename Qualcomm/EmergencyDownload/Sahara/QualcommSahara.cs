@@ -20,7 +20,6 @@
 
 using EDLTests.Qualcomm.EmergencyDownload.Sahara.Command;
 using EDLTests.Qualcomm.EmergencyDownload.Transport;
-using System.ComponentModel.Design;
 
 namespace EDLTests.Qualcomm.EmergencyDownload.Sahara
 {

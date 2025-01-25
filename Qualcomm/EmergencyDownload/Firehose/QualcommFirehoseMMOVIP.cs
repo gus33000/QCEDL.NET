@@ -2,6 +2,7 @@
 using EDLTests.Qualcomm.EmergencyDownload.Transport;
 using System.Xml.Serialization;
 using System.Xml;
+using EDLTests.Qualcomm.EmergencyDownload.Firehose.Xml.Elements;
 
 namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
 {
@@ -48,9 +49,9 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                 try
                 {
                     Serial.SetTimeOut(500);
-                    QualcommFirehoseXmlElements.Data[] datas = Firehose.GetFirehoseResponseDataPayloads();
+                    Data[] datas = Firehose.GetFirehoseResponseDataPayloads();
 
-                    foreach (QualcommFirehoseXmlElements.Data data in datas)
+                    foreach (Data data in datas)
                     {
                         if (data.Log != null)
                         {
@@ -62,7 +63,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                         }
                         else
                         {
-                            XmlSerializer xmlSerializer = new(typeof(QualcommFirehoseXmlElements.Data));
+                            XmlSerializer xmlSerializer = new(typeof(Data));
 
                             using StringWriter sww = new();
                             using XmlWriter writer = XmlWriter.Create(sww);
@@ -78,7 +79,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                     {
                         datas = Firehose.GetFirehoseResponseDataPayloads();
 
-                        foreach (QualcommFirehoseXmlElements.Data data in datas)
+                        foreach (Data data in datas)
                         {
                             if (data.Log != null)
                             {
@@ -90,7 +91,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                             }
                             else
                             {
-                                XmlSerializer xmlSerializer = new(typeof(QualcommFirehoseXmlElements.Data));
+                                XmlSerializer xmlSerializer = new(typeof(Data));
 
                                 using StringWriter sww = new();
                                 using XmlWriter writer = XmlWriter.Create(sww);
@@ -108,7 +109,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                     {
                         datas = Firehose.GetFirehoseResponseDataPayloads();
 
-                        foreach (QualcommFirehoseXmlElements.Data data in datas)
+                        foreach (Data data in datas)
                         {
                             if (data.Log != null)
                             {
@@ -120,7 +121,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                             }
                             else
                             {
-                                XmlSerializer xmlSerializer = new(typeof(QualcommFirehoseXmlElements.Data));
+                                XmlSerializer xmlSerializer = new(typeof(Data));
 
                                 using StringWriter sww = new();
                                 using XmlWriter writer = XmlWriter.Create(sww);

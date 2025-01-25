@@ -18,6 +18,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using EDLTests.Qualcomm.EmergencyDownload.Firehose.Xml;
+using EDLTests.Qualcomm.EmergencyDownload.Firehose.Xml.Elements;
 using EDLTests.Qualcomm.EmergencyDownload.Transport;
 using System.Text;
 using System.Xml;
@@ -53,12 +55,12 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             return ResponseBuffer;
         }
 
-        public QualcommFirehoseXmlElements.Data[] GetFirehoseResponseDataPayloads(bool WaitTilFooter = false)
+        public Data[] GetFirehoseResponseDataPayloads(bool WaitTilFooter = false)
         {
             byte[] ResponseBuffer = GetFirehoseXMLResponseBuffer(WaitTilFooter);
             string Incoming = Encoding.UTF8.GetString(ResponseBuffer);
 
-            QualcommFirehoseXmlElements.Data[] datas = QualcommFirehoseXml.GetDataPayloads(Incoming);
+            Data[] datas = QualcommFirehoseXml.GetDataPayloads(Incoming);
 
             return datas;
         }
@@ -68,12 +70,12 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             Console.WriteLine("Read");
 
             string Command03 = QualcommFirehoseXml.BuildCommandPacket([
-                new QualcommFirehoseXmlElements.Data()
+                new Data()
                 {
-                    Read = new QualcommFirehoseXmlElements.Read()
+                    Read = new Read()
                     {
                         PhysicalPartitionNumber = LUNi,
-                        StorageType = QualcommFirehoseXmlElements.StorageType.UFS,
+                        StorageType = StorageType.UFS,
                         Slot = 0,
                         SectorSizeInBytes = 4096,
                         StartSector = "0",
@@ -90,9 +92,9 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
 
             while (!GotResponse)
             {
-                QualcommFirehoseXmlElements.Data[] datas = GetFirehoseResponseDataPayloads(true);
+                Data[] datas = GetFirehoseResponseDataPayloads(true);
 
-                foreach (QualcommFirehoseXmlElements.Data data in datas)
+                foreach (Data data in datas)
                 {
                     if (data.Log != null)
                     {
@@ -109,7 +111,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                     }
                     else
                     {
-                        XmlSerializer xmlSerializer = new(typeof(QualcommFirehoseXmlElements.Data));
+                        XmlSerializer xmlSerializer = new(typeof(Data));
 
                         using StringWriter sww = new();
                         using XmlWriter writer = XmlWriter.Create(sww);
@@ -134,9 +136,9 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
 
             while (!GotResponse)
             {
-                QualcommFirehoseXmlElements.Data[] datas = GetFirehoseResponseDataPayloads();
+                Data[] datas = GetFirehoseResponseDataPayloads();
 
-                foreach (QualcommFirehoseXmlElements.Data data in datas)
+                foreach (Data data in datas)
                 {
                     if (data.Log != null)
                     {
@@ -153,7 +155,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                     }
                     else
                     {
-                        XmlSerializer xmlSerializer = new(typeof(QualcommFirehoseXmlElements.Data));
+                        XmlSerializer xmlSerializer = new(typeof(Data));
 
                         using StringWriter sww = new();
                         using XmlWriter writer = XmlWriter.Create(sww);
@@ -173,11 +175,11 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             Console.WriteLine("Rebooting phone");
 
             string Command03 = QualcommFirehoseXml.BuildCommandPacket([
-                new QualcommFirehoseXmlElements.Data()
+                new Data()
                 {
-                    Power = new QualcommFirehoseXmlElements.Power()
+                    Power = new Power()
                     {
-                        Value = QualcommFirehoseXmlElements.PowerValue.Reset
+                        Value = PowerValue.Reset
                     }
                 }
             ]);
@@ -189,9 +191,9 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
 
             while (!GotResponse)
             {
-                QualcommFirehoseXmlElements.Data[] datas = GetFirehoseResponseDataPayloads();
+                Data[] datas = GetFirehoseResponseDataPayloads();
 
-                foreach (QualcommFirehoseXmlElements.Data data in datas)
+                foreach (Data data in datas)
                 {
                     if (data.Log != null)
                     {
@@ -208,7 +210,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                     }
                     else
                     {
-                        XmlSerializer xmlSerializer = new(typeof(QualcommFirehoseXmlElements.Data));
+                        XmlSerializer xmlSerializer = new(typeof(Data));
 
                         using StringWriter sww = new();
                         using XmlWriter writer = XmlWriter.Create(sww);
@@ -233,12 +235,12 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             Console.WriteLine("Getting Storage Info");
 
             string Command03 = QualcommFirehoseXml.BuildCommandPacket([
-                new QualcommFirehoseXmlElements.Data()
+                new Data()
                 {
-                    GetStorageInfo = new QualcommFirehoseXmlElements.GetStorageInfo()
+                    GetStorageInfo = new GetStorageInfo()
                     {
                         //PhysicalPartitionNumber = 0,
-                        StorageType = QualcommFirehoseXmlElements.StorageType.UFS,
+                        StorageType = StorageType.UFS,
                         //Slot = 0
                     }
                 }
@@ -251,9 +253,9 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
 
             while (!GotResponse)
             {
-                QualcommFirehoseXmlElements.Data[] datas = GetFirehoseResponseDataPayloads();
+                Data[] datas = GetFirehoseResponseDataPayloads();
 
-                foreach (QualcommFirehoseXmlElements.Data data in datas)
+                foreach (Data data in datas)
                 {
                     if (data.Log != null)
                     {
@@ -270,7 +272,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
                     }
                     else
                     {
-                        XmlSerializer xmlSerializer = new(typeof(QualcommFirehoseXmlElements.Data));
+                        XmlSerializer xmlSerializer = new(typeof(Data));
 
                         using StringWriter sww = new();
                         using XmlWriter writer = XmlWriter.Create(sww);

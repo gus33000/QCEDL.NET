@@ -1,13 +1,14 @@
 ﻿using System.Xml.Serialization;
 using System.Xml;
+using EDLTests.Qualcomm.EmergencyDownload.Firehose.Xml.Elements;
 
-namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
+namespace EDLTests.Qualcomm.EmergencyDownload.Firehose.Xml
 {
     internal class QualcommFirehoseXml
     {
-        public static string BuildCommandPacket(QualcommFirehoseXmlElements.Data[] dataPayloads)
+        public static string BuildCommandPacket(Data[] dataPayloads)
         {
-            XmlSerializer xmlSerializer = new(typeof(QualcommFirehoseXmlElements.Data), new XmlRootAttribute("data"));
+            XmlSerializer xmlSerializer = new(typeof(Data), new XmlRootAttribute("data"));
 
             XmlWriterSettings settings = new()
             {
@@ -19,7 +20,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
 
             List<string> dataStrElements = [];
 
-            foreach (QualcommFirehoseXmlElements.Data data in dataPayloads)
+            foreach (Data data in dataPayloads)
             {
                 using StringWriter sww = new();
                 using XmlWriter writer = XmlWriter.Create(sww, settings);
@@ -32,7 +33,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             return "<?xml version=\"1.0\" ?>" + string.Join("", dataStrElements);
         }
 
-        public static QualcommFirehoseXmlElements.Data[] GetDataPayloads(string commandPacket)
+        public static Data[] GetDataPayloads(string commandPacket)
         {
             /*ConsoleColor original = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Yellow;
@@ -43,7 +44,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             commandPacket = $"<dataArray>{commandPacket}</dataArray>";
             commandPacket = commandPacket.Replace((char)0x14, ' ');
 
-            XmlSerializer xmlSerializer = new(typeof(QualcommFirehoseXmlElements.DataArray), new XmlRootAttribute("dataArray"));
+            XmlSerializer xmlSerializer = new(typeof(DataArray), new XmlRootAttribute("dataArray"));
 
             XmlReaderSettings settings = new()
             {
@@ -51,7 +52,7 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
             };
 
             using XmlReader reader = XmlReader.Create(new StringReader(commandPacket), settings);
-            QualcommFirehoseXmlElements.DataArray data = xmlSerializer.Deserialize(reader) as QualcommFirehoseXmlElements.DataArray;
+            DataArray data = xmlSerializer.Deserialize(reader) as DataArray;
 
             return data.Data;
         }
