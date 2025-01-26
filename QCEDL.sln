@@ -1,0 +1,61 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35605.110
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QCEDL.NET", "QCEDL.NET\QCEDL.NET.csproj", "{73017A55-AFEC-466C-9223-A732BF2369C6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QCEDL.Client", "QCEDL.Client\QCEDL.Client.csproj", "{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM32 = Debug|ARM32
+		Debug|ARM64 = Debug|ARM64
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|ARM32 = Release|ARM32
+		Release|ARM64 = Release|ARM64
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Debug|ARM32.ActiveCfg = Debug|ARM32
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Debug|ARM32.Build.0 = Debug|ARM32
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Debug|ARM64.Build.0 = Debug|ARM64
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Debug|x64.ActiveCfg = Debug|x64
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Debug|x64.Build.0 = Debug|x64
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Debug|x86.ActiveCfg = Debug|x86
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Debug|x86.Build.0 = Debug|x86
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Release|ARM32.ActiveCfg = Release|ARM32
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Release|ARM32.Build.0 = Release|ARM32
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Release|ARM64.ActiveCfg = Release|ARM64
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Release|ARM64.Build.0 = Release|ARM64
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Release|x64.ActiveCfg = Release|x64
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Release|x64.Build.0 = Release|x64
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Release|x86.ActiveCfg = Release|x86
+		{73017A55-AFEC-466C-9223-A732BF2369C6}.Release|x86.Build.0 = Release|x86
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Debug|ARM32.ActiveCfg = Debug|ARM32
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Debug|ARM32.Build.0 = Debug|ARM32
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Debug|ARM64.Build.0 = Debug|ARM64
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Debug|x64.ActiveCfg = Debug|x64
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Debug|x64.Build.0 = Debug|x64
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Debug|x86.ActiveCfg = Debug|x86
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Debug|x86.Build.0 = Debug|x86
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Release|ARM32.ActiveCfg = Release|ARM32
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Release|ARM32.Build.0 = Release|ARM32
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Release|ARM64.ActiveCfg = Release|ARM64
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Release|ARM64.Build.0 = Release|ARM64
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Release|x64.ActiveCfg = Release|x64
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Release|x64.Build.0 = Release|x64
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Release|x86.ActiveCfg = Release|x86
+		{E4A0C99A-1E80-4D91-9D39-786D6F45C27E}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E3C2A2A2-9B27-4C8C-A5AE-4CB835B3A5A3}
+	EndGlobalSection
+EndGlobal
