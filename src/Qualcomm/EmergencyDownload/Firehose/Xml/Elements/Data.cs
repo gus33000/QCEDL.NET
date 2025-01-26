@@ -34,5 +34,11 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose.Xml.Elements
         {
             get; set;
         }
+
+        [XmlElement(ElementName = "configure")]
+        public Configure? Configure
+        {
+            get; set;
+        }
     }
 }

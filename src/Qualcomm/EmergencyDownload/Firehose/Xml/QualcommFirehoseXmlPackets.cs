@@ -4,6 +4,23 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose.Xml
 {
     internal class QualcommFirehoseXmlPackets
     {
+        public static Data GetConfigurePacket(StorageType memoryName, bool verbose, ulong maxPayloadSizeToTargetInBytes, bool alwaysValidate, ulong maxDigestTableSizeInBytes, bool zlpAwareHost, bool skipWrite)
+        {
+            return new Data()
+            {
+                Configure = new Configure()
+                {
+                    MemoryName = memoryName,
+                    Verbose = verbose ? "1" : "0",
+                    MaxPayloadSizeToTargetInBytes = maxPayloadSizeToTargetInBytes,
+                    AlwaysValidate = alwaysValidate ? "1" : "0",
+                    MaxDigestTableSizeInBytes = maxDigestTableSizeInBytes,
+                    ZlpAwareHost = zlpAwareHost ? "1" : "0",
+                    SkipWrite = skipWrite ? "1" : "0"
+                }
+            };
+        }
+
         public static Data GetReadPacket(StorageType storageType, uint LUNi, uint sectorSize, uint FirstSector, uint LastSector)
         {
             return new Data()

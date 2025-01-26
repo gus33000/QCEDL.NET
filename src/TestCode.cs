@@ -174,6 +174,7 @@ namespace EDLTests
                     }
                     catch (BadConnectionException) { }
 
+                    Firehose.Configure(StorageType.SDCC);
                     Firehose.GetStorageInfo(StorageType.SDCC);
                     ReadGPTs(Firehose, StorageType.SDCC);
 

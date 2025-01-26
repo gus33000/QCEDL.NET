@@ -8,6 +8,55 @@ namespace EDLTests.Qualcomm.EmergencyDownload.Firehose
 {
     internal static class QualcommFirehoseCommands
     {
+        public static bool Configure(this QualcommFirehose Firehose, StorageType storageType)
+        {
+            Console.WriteLine("Configuring");
+
+            string Command03 = QualcommFirehoseXml.BuildCommandPacket([
+                QualcommFirehoseXmlPackets.GetConfigurePacket(storageType, true, 1048576, false, 8192, true, false)
+            ]);
+
+            Firehose.Serial.SendData(Encoding.UTF8.GetBytes(Command03));
+
+            bool RawMode = false;
+            bool GotResponse = false;
+
+            while (!GotResponse)
+            {
+                Data[] datas = Firehose.GetFirehoseResponseDataPayloads();
+
+                foreach (Data data in datas)
+                {
+                    if (data.Log != null)
+                    {
+                        Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                    }
+                    else if (data.Response != null)
+                    {
+                        if (data.Response.RawMode)
+                        {
+                            RawMode = true;
+                        }
+
+                        GotResponse = true;
+                    }
+                    else
+                    {
+                        XmlSerializer xmlSerializer = new(typeof(Data));
+
+                        using StringWriter sww = new();
+                        using XmlWriter writer = XmlWriter.Create(sww);
+
+                        xmlSerializer.Serialize(writer, data);
+
+                        Console.WriteLine(sww.ToString());
+                    }
+                }
+            }
+
+            return true;
+        }
+
         public static byte[] Read(this QualcommFirehose Firehose, StorageType storageType, uint LUNi, uint sectorSize, uint FirstSector, uint LastSector)
         {
             Console.WriteLine("Read");
