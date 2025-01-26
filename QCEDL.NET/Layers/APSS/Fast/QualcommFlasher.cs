@@ -28,7 +28,7 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Fast
         Sectors
     }
 
-    internal class QualcommFlasher
+    public class QualcommFlasher
     {
         private readonly QualcommSerial Serial;
 

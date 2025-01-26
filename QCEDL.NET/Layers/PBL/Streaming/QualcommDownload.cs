@@ -22,7 +22,7 @@ using Qualcomm.EmergencyDownload.Transport;
 
 namespace Qualcomm.EmergencyDownload.Layers.PBL.Streaming
 {
-    internal class QualcommDownload
+    public class QualcommDownload
     {
         private readonly QualcommSerial Serial;
 
