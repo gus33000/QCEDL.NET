@@ -1,8 +1,8 @@
-﻿using QCEDL.NET.Qualcomm.EmergencyDownload.Layers.APSS.Firehose;
-using QCEDL.NET.Qualcomm.EmergencyDownload.Layers.APSS.Firehose.Xml.Elements;
-using QCEDL.NET.Qualcomm.EmergencyDownload.Layers.PBL.Sahara;
-using QCEDL.NET.Qualcomm.EmergencyDownload.Transport;
-using QCEDL.NET.Qualcomm.EmergencyDownload.ChipInfo;
+﻿using Qualcomm.EmergencyDownload.Layers.APSS.Firehose;
+using Qualcomm.EmergencyDownload.Layers.APSS.Firehose.Xml.Elements;
+using Qualcomm.EmergencyDownload.Layers.PBL.Sahara;
+using Qualcomm.EmergencyDownload.Transport;
+using Qualcomm.EmergencyDownload.ChipInfo;
 using System.Xml.Serialization;
 using System.Xml;
 using System.Text;
