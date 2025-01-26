@@ -175,9 +175,9 @@ namespace QCEDL.Client
                     }
                     catch (BadConnectionException) { }
 
-                    Firehose.Configure(StorageType.SDCC);
-                    Firehose.GetStorageInfo(StorageType.SDCC);
-                    ReadGPTs(Firehose, StorageType.SDCC);
+                    Firehose.Configure(StorageType.UFS);
+                    Firehose.GetStorageInfo(StorageType.UFS);
+                    ReadGPTs(Firehose, StorageType.UFS);
 
                     if (Firehose.Reset())
                     {
