@@ -8,6 +8,11 @@ using System.Xml;
 using System.Text;
 using QCEDL.NET.PartitionTable;
 
+using DiscUtils;
+using DiscUtils.Containers;
+using DiscUtils.Streams;
+using System.Diagnostics;
+
 namespace QCEDL.Client
 {
     internal class TestCode
@@ -25,6 +30,7 @@ namespace QCEDL.Client
                 sectorSize = 512;
             }
 
+            // Read 6 sectors
             return Firehose.Read(storageType, physicalPartition, sectorSize, 0, 5);
         }
 
@@ -56,7 +62,16 @@ namespace QCEDL.Client
         {
             for (int i = 0; i < 10; i++)
             {
-                GPT GPT = ReadGPT(Firehose, storageType, (uint)i);
+                GPT GPT = null;
+
+                try
+                {
+                    GPT = ReadGPT(Firehose, storageType, (uint)i);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
 
                 if (GPT == null)
                 {
@@ -148,7 +163,7 @@ namespace QCEDL.Client
                             {
                                 if (data.Log != null)
                                 {
-                                    Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                                    Debug.WriteLine("DEVPRG LOG: " + data.Log.Value);
                                 }
                                 else if (data.Response != null)
                                 {
@@ -179,6 +194,8 @@ namespace QCEDL.Client
                     Firehose.GetStorageInfo(StorageType.UFS);
                     ReadGPTs(Firehose, StorageType.UFS);
 
+                    DumpUFSDevice(Firehose);
+
                     if (Firehose.Reset())
                     {
                         Console.WriteLine();
@@ -200,6 +217,93 @@ namespace QCEDL.Client
                 Console.WriteLine();
                 Console.WriteLine("END TestProgrammer");
             }
+        }
+
+        public static void DumpUFSDevice(QualcommFirehose Firehose)
+        {
+            List<Qualcomm.EmergencyDownload.Layers.APSS.Firehose.JSON.StorageInfo.Root> luStorageInfos = [];
+
+            // Figure out the number of LUNs first.
+            Qualcomm.EmergencyDownload.Layers.APSS.Firehose.JSON.StorageInfo.Root? mainInfo = Firehose.GetStorageInfo(StorageType.UFS);
+            if (mainInfo != null)
+            {
+                int totalLuns = mainInfo.storage_info.num_physical;
+
+                // Now figure out the size of each lun
+                for (int i = 0; i < totalLuns; i++)
+                {
+                    Qualcomm.EmergencyDownload.Layers.APSS.Firehose.JSON.StorageInfo.Root? luInfo = Firehose.GetStorageInfo(StorageType.UFS, (uint)i);
+                    if (luInfo == null)
+                    {
+                        throw new Exception("Error in reading LUN " + i + " for storage info!");
+                    }
+                    luStorageInfos.Add(luInfo);
+                }
+            }
+
+            for (int i = 0; i < luStorageInfos.Count; i++)
+            {
+                Qualcomm.EmergencyDownload.Layers.APSS.Firehose.JSON.StorageInfo.Root storageInfo = luStorageInfos[i];
+
+                Console.WriteLine($"LUN[{i}] Name: {storageInfo.storage_info.prod_name}");
+                Console.WriteLine($"LUN[{i}] Total Blocks: {storageInfo.storage_info.total_blocks}");
+                Console.WriteLine($"LUN[{i}] Block Size: {storageInfo.storage_info.block_size}");
+                Console.WriteLine();
+            }
+
+            LUNStream test = new LUNStream(Firehose, 1, StorageType.UFS);
+            ConvertDD2VHD("testing.vhdx", 4096, test);
+        }
+
+        /// <summary>
+        ///     Coverts a raw DD image into a VHD file suitable for FFU imaging.
+        /// </summary>
+        /// <param name="ddfile">The path to the DD file.</param>
+        /// <param name="vhdfile">The path to the output VHD file.</param>
+        /// <returns></returns>
+        public static void ConvertDD2VHD(string vhdfile, uint SectorSize, Stream inputStream)
+        {
+            SetupHelper.SetupContainers();
+
+            using DiscUtils.Raw.Disk inDisk = new(inputStream, Ownership.Dispose);
+
+            long diskCapacity = inputStream.Length;
+            using Stream fs = new FileStream(vhdfile, FileMode.CreateNew, FileAccess.ReadWrite);
+            using DiscUtils.Vhdx.Disk outDisk = DiscUtils.Vhdx.Disk.InitializeDynamic(fs, Ownership.None, diskCapacity, Geometry.FromCapacity(diskCapacity, (int)SectorSize));
+            SparseStream contentStream = inDisk.Content;
+
+            StreamPump pump = new()
+            {
+                InputStream = contentStream,
+                OutputStream = outDisk.Content,
+                SparseCopy = true,
+                SparseChunkSize = (int)SectorSize,
+                BufferSize = (int)SectorSize * 24 // Max 24 sectors at a time
+            };
+
+            long totalBytes = contentStream.Length;
+
+            DateTime now = DateTime.Now;
+            pump.ProgressEvent += (o, e) => { ShowProgress((ulong)e.BytesRead, (ulong)totalBytes, now); };
+
+            Logging.Log("Converting RAW to VHDX");
+            pump.Run();
+            Console.WriteLine();
+        }
+
+        protected static void ShowProgress(ulong readBytes, ulong totalBytes, DateTime startTime)
+        {
+            DateTime now = DateTime.Now;
+            TimeSpan timeSoFar = now - startTime;
+
+            TimeSpan remaining =
+                TimeSpan.FromMilliseconds(timeSoFar.TotalMilliseconds / readBytes * (totalBytes - readBytes));
+
+            double speed = Math.Round(readBytes / 1024L / 1024L / timeSoFar.TotalSeconds);
+
+            Logging.Log(
+                $"{Logging.GetDISMLikeProgressBar((uint)(readBytes * 100 / totalBytes))} {speed}MB/s {remaining:hh\\:mm\\:ss\\.f}",
+                returnLine: false);
         }
     }
 }

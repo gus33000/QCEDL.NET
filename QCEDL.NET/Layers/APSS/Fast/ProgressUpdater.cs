@@ -23,7 +23,7 @@
 
 namespace Qualcomm.EmergencyDownload.Layers.APSS.Fast
 {
-    internal class ProgressUpdater
+    public class ProgressUpdater
     {
         private readonly DateTime InitTime;
         private DateTime LastUpdateTime;

@@ -50,13 +50,13 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose.Xml
             };
         }
 
-        public static Data GetStorageInfoPacket(StorageType storageType)
+        public static Data GetStorageInfoPacket(StorageType storageType, uint PhysicalPartitionNumber = 0)
         {
             return new Data()
             {
                 GetStorageInfo = new GetStorageInfo()
                 {
-                    //PhysicalPartitionNumber = 0,
+                    PhysicalPartitionNumber = PhysicalPartitionNumber,
                     StorageType = storageType,
                     //Slot = 0
                 }

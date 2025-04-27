@@ -3,6 +3,7 @@ using System.Xml.Serialization;
 using System.Xml;
 using Qualcomm.EmergencyDownload.Layers.PBL.Sahara;
 using Qualcomm.EmergencyDownload.Layers.APSS.Firehose.Xml.Elements;
+using System.Diagnostics;
 
 namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
 {
@@ -55,7 +56,7 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
                     {
                         if (data.Log != null)
                         {
-                            Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                            Debug.WriteLine("DEVPRG LOG: " + data.Log.Value);
                         }
                         else if (data.Response != null)
                         {
@@ -83,7 +84,7 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
                         {
                             if (data.Log != null)
                             {
-                                Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                                Debug.WriteLine("DEVPRG LOG: " + data.Log.Value);
                             }
                             else if (data.Response != null)
                             {
@@ -113,7 +114,7 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
                         {
                             if (data.Log != null)
                             {
-                                Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                                Debug.WriteLine("DEVPRG LOG: " + data.Log.Value);
                             }
                             else if (data.Response != null)
                             {

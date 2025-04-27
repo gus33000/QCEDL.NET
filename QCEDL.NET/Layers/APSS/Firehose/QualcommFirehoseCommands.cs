@@ -3,6 +3,7 @@ using System.Xml.Serialization;
 using System.Xml;
 using Qualcomm.EmergencyDownload.Layers.APSS.Firehose.Xml;
 using Qualcomm.EmergencyDownload.Layers.APSS.Firehose.Xml.Elements;
+using System.Diagnostics;
 
 namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
 {
@@ -29,7 +30,7 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
                 {
                     if (data.Log != null)
                     {
-                        Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                        Debug.WriteLine("DEVPRG LOG: " + data.Log.Value);
                     }
                     else if (data.Response != null)
                     {
@@ -59,7 +60,8 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
 
         public static byte[] Read(this QualcommFirehose Firehose, StorageType storageType, uint LUNi, uint sectorSize, uint FirstSector, uint LastSector)
         {
-            Console.WriteLine("Read");
+            Debug.WriteLine("READ: FirstSector: " + FirstSector + " - LastSector: " + LastSector + " - SectorSize: " + sectorSize);
+            //Console.WriteLine("Read");
 
             string Command03 = QualcommFirehoseXml.BuildCommandPacket([
                 QualcommFirehoseXmlPackets.GetReadPacket(storageType, LUNi, sectorSize, FirstSector, LastSector)
@@ -78,7 +80,7 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
                 {
                     if (data.Log != null)
                     {
-                        Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                        Debug.WriteLine("DEVPRG LOG: " + data.Log.Value);
                     }
                     else if (data.Response != null)
                     {
@@ -109,7 +111,8 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
                 return null;
             }
 
-            byte[] readBuffer = Firehose.Serial.GetResponse(null, Length: (int)(LastSector - FirstSector + 1) * 4096);
+            int totalReadLength = (int)(LastSector - FirstSector + 1) * 4096;
+            byte[] readBuffer = Firehose.Serial.GetResponse(null, Length: totalReadLength);
 
             RawMode = false;
             GotResponse = false;
@@ -122,7 +125,7 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
                 {
                     if (data.Log != null)
                     {
-                        Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                        Debug.WriteLine("DEVPRG LOG: " + data.Log.Value);
                     }
                     else if (data.Response != null)
                     {
@@ -171,7 +174,7 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
                 {
                     if (data.Log != null)
                     {
-                        Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                        Debug.WriteLine("DEVPRG LOG: " + data.Log.Value);
                     }
                     else if (data.Response != null)
                     {
@@ -204,18 +207,19 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
             return true;
         }
 
-        public static bool GetStorageInfo(this QualcommFirehose Firehose, StorageType storageType = StorageType.UFS)
+        public static JSON.StorageInfo.Root? GetStorageInfo(this QualcommFirehose Firehose, StorageType storageType = StorageType.UFS, uint PhysicalPartitionNumber = 0)
         {
             Console.WriteLine("Getting Storage Info");
 
             string Command03 = QualcommFirehoseXml.BuildCommandPacket([
-                QualcommFirehoseXmlPackets.GetStorageInfoPacket(storageType)
+                QualcommFirehoseXmlPackets.GetStorageInfoPacket(storageType, PhysicalPartitionNumber)
             ]);
 
             Firehose.Serial.SendData(Encoding.UTF8.GetBytes(Command03));
 
-            bool RawMode = false;
             bool GotResponse = false;
+
+            string storageInfoJson = null;
 
             while (!GotResponse)
             {
@@ -225,15 +229,15 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
                 {
                     if (data.Log != null)
                     {
-                        Console.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                        if (data.Log.Value.StartsWith("INFO: {\"storage_info\": "))
+                        {
+                            storageInfoJson = data.Log.Value.Substring(6);
+                        }
+
+                        Debug.WriteLine("DEVPRG LOG: " + data.Log.Value);
                     }
                     else if (data.Response != null)
                     {
-                        if (data.Response.RawMode)
-                        {
-                            RawMode = true;
-                        }
-
                         GotResponse = true;
                     }
                     else
@@ -250,7 +254,19 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
                 }
             }
 
-            return true;
+            if (storageInfoJson == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<JSON.StorageInfo.Root>(storageInfoJson);
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

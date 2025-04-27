@@ -11,6 +11,18 @@
 
   <ItemGroup>
     <ProjectReference Include="..\QCEDL.NET\QCEDL.NET.csproj" />
+    <PackageReference Include="LTRData.DiscUtils.Containers" Version="1.0.47" />
+    <PackageReference Include="LTRData.DiscUtils.Core" Version="1.0.47" />
+    <PackageReference Include="LTRData.DiscUtils.Dmg" Version="1.0.47" />
+    <PackageReference Include="LTRData.DiscUtils.Iso9660" Version="1.0.47" />
+    <PackageReference Include="LTRData.DiscUtils.Net" Version="1.0.47" />
+    <PackageReference Include="LTRData.DiscUtils.OpticalDiscSharing" Version="1.0.47" />
+    <PackageReference Include="LTRData.DiscUtils.Streams" Version="1.0.47" />
+    <PackageReference Include="LTRData.DiscUtils.Vhd" Version="1.0.47" />
+    <PackageReference Include="LTRData.DiscUtils.Vhdx" Version="1.0.47" />
+    <PackageReference Include="LTRData.DiscUtils.Vmdk" Version="1.0.47" />
+    <PackageReference Include="LTRData.DiscUtils.Wim" Version="1.0.47" />
+    <PackageReference Include="LTRData.DiscUtils.Xva" Version="1.0.47" />
   </ItemGroup>
 
 </Project>

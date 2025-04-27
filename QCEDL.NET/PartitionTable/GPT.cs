@@ -54,10 +54,15 @@ namespace QCEDL.NET.PartitionTable
             stream.Read(array, 0, array.Length);
             GPTHeader gptheader = StructureFromBytes<GPTHeader>(array);
 
-            while (new string(gptheader.Signature) != "EFI PART")
+            if (new string(gptheader.Signature) != "EFI PART")
             {
                 stream.Read(array, 0, array.Length);
                 gptheader = StructureFromBytes<GPTHeader>(array);
+            }
+
+            if (new string(gptheader.Signature) != "EFI PART")
+            {
+                throw new InvalidDataException("No GPT!");
             }
 
             GPT? gpt;
