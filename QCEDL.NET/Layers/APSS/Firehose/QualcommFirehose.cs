@@ -56,11 +56,26 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
         public Data[] GetFirehoseResponseDataPayloads(bool WaitTilFooter = false)
         {
             byte[] ResponseBuffer = GetFirehoseXMLResponseBuffer(WaitTilFooter);
+
+            // Empty response...
+            if (ResponseBuffer.All(t => t == 0x0))
+            {
+                return [];
+            }
+
             string Incoming = Encoding.UTF8.GetString(ResponseBuffer);
 
-            Data[] datas = QualcommFirehoseXml.GetDataPayloads(Incoming);
-
-            return datas;
+            try
+            {
+                Data[] datas = QualcommFirehoseXml.GetDataPayloads(Incoming);
+                return datas;
+            }
+            catch
+            {
+                Console.WriteLine("UNEXPECTED PARSING FAILURE. ABOUT TO CRASH. PAYLOAD BYTE RAW AS FOLLOW:");
+                Console.WriteLine(BitConverter.ToString(ResponseBuffer).Replace("-", ""));
+                throw;
+            }
         }
     }
 }

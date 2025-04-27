@@ -40,9 +40,9 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose.Xml
             Console.WriteLine(commandPacket);
             Console.ForegroundColor = original;*/
 
-            commandPacket = commandPacket.Replace("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>", "");
-            commandPacket = $"<dataArray>{commandPacket}</dataArray>";
-            commandPacket = commandPacket.Replace((char)0x14, ' ');
+            string newCommandPacket = commandPacket.Replace("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>", "");
+            newCommandPacket = $"<dataArray>{newCommandPacket}</dataArray>";
+            newCommandPacket = newCommandPacket.Replace((char)0x14, ' ');
 
             XmlSerializer xmlSerializer = new(typeof(DataArray), new XmlRootAttribute("dataArray"));
 
@@ -51,10 +51,19 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose.Xml
                 CheckCharacters = false
             };
 
-            using XmlReader reader = XmlReader.Create(new StringReader(commandPacket), settings);
-            DataArray data = xmlSerializer.Deserialize(reader) as DataArray;
+            using XmlReader reader = XmlReader.Create(new StringReader(newCommandPacket), settings);
 
-            return data.Data;
+            try
+            {
+                DataArray data = xmlSerializer.Deserialize(reader) as DataArray;
+                return data.Data;
+            }
+            catch
+            {
+                Console.WriteLine("UNEXPECTED PARSING FAILURE. ABOUT TO CRASH. PAYLOAD STR RAW AS FOLLOW:");
+                Console.WriteLine(commandPacket);
+                throw;
+            }
         }
     }
 }

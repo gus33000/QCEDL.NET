@@ -58,6 +58,20 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
             return true;
         }
 
+        public static byte[] GetExpectedBufferLength(this QualcommFirehose Firehose, int length)
+        {
+            List<byte> bufferList = [];
+
+            do
+            {
+                bufferList.AddRange(Firehose.Serial.GetResponse(null, Length: length - bufferList.Count));
+            } while (bufferList.Count < length);
+
+            byte[] ResponseBuffer = [.. bufferList];
+
+            return ResponseBuffer;
+        }
+
         public static byte[] Read(this QualcommFirehose Firehose, StorageType storageType, uint LUNi, uint sectorSize, uint FirstSector, uint LastSector)
         {
             Debug.WriteLine("READ: FirstSector: " + FirstSector + " - LastSector: " + LastSector + " - SectorSize: " + sectorSize);
@@ -112,7 +126,8 @@ namespace Qualcomm.EmergencyDownload.Layers.APSS.Firehose
             }
 
             int totalReadLength = (int)(LastSector - FirstSector + 1) * 4096;
-            byte[] readBuffer = Firehose.Serial.GetResponse(null, Length: totalReadLength);
+
+            byte[] readBuffer = Firehose.GetExpectedBufferLength(totalReadLength);
 
             RawMode = false;
             GotResponse = false;

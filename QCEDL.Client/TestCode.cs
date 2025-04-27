@@ -53,7 +53,7 @@ namespace QCEDL.Client
             {
                 return null;
             }
-            
+
             using MemoryStream stream = new(GPTLUN);
             return GPT.ReadFromStream(stream, (int)sectorSize);
         }
@@ -104,108 +104,115 @@ namespace QCEDL.Client
 
                 // Send and start programmer
                 QualcommSerial Serial = new(DevicePath);
-                QualcommSahara Sahara = new(Serial);
 
-                Sahara.CommandHandshake();
-
-                byte[][] RKHs = Sahara.GetRKHs();
-                byte[] SN = Sahara.GetSerialNumber();
-
-                for (int i = 0; i < RKHs.Length; i++)
+                try
                 {
-                    byte[] RKH = RKHs[i];
-                    string RKHAsString = Convert.ToHexString(RKH);
-                    string FriendlyName = "Unknown";
+                    QualcommSahara Sahara = new(Serial);
 
-                    foreach (KeyValuePair<string, string> element in KnownPKData.KnownOEMPKHashes)
+                    Sahara.CommandHandshake();
+
+                    byte[][] RKHs = Sahara.GetRKHs();
+                    byte[] SN = Sahara.GetSerialNumber();
+
+                    for (int i = 0; i < RKHs.Length; i++)
                     {
-                        if (element.Value == RKHAsString)
+                        byte[] RKH = RKHs[i];
+                        string RKHAsString = Convert.ToHexString(RKH);
+                        string FriendlyName = "Unknown";
+
+                        foreach (KeyValuePair<string, string> element in KnownPKData.KnownOEMPKHashes)
                         {
-                            FriendlyName = element.Key;
-                            break;
+                            if (element.Value == RKHAsString)
+                            {
+                                FriendlyName = element.Key;
+                                break;
+                            }
                         }
+
+                        Console.WriteLine($"RKH[{i}]: {RKHAsString} ({FriendlyName})");
                     }
 
-                    Console.WriteLine($"RKH[{i}]: {RKHAsString} ({FriendlyName})");
+                    byte[] HWID = Sahara.GetHWID();
+                    HardwareID.ParseHWID(HWID);
+
+                    Console.WriteLine($"Serial Number: {Convert.ToHexString(SN)}");
+
+                    Sahara.SwitchMode(QualcommSaharaMode.ImageTXPending);
+
+                    Console.WriteLine();
+
+                    if (!await Sahara.LoadProgrammer(ProgrammerPath))
+                    {
+                        Console.WriteLine("Emergency programmer test failed");
+                        return;
+                    }
                 }
-
-                byte[] HWID = Sahara.GetHWID();
-                HardwareID.ParseHWID(HWID);
-
-                Console.WriteLine($"Serial Number: {Convert.ToHexString(SN)}");
-
-                Sahara.SwitchMode(QualcommSaharaMode.ImageTXPending);
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
 
                 Console.WriteLine();
 
-                if (!await Sahara.LoadProgrammer(ProgrammerPath))
+                QualcommFirehose Firehose = new(Serial);
+
+                //QualcommFirehoseMMOVIP.ConnectToProgrammerInTestMode(Serial, Firehose);
+
+                bool RawMode = false;
+                bool GotResponse = false;
+
+                try
                 {
-                    Console.WriteLine("Emergency programmer test failed");
+                    while (!GotResponse)
+                    {
+                        Data[] datas = Firehose.GetFirehoseResponseDataPayloads();
+
+                        foreach (Data data in datas)
+                        {
+                            if (data.Log != null)
+                            {
+                                Debug.WriteLine("DEVPRG LOG: " + data.Log.Value);
+                            }
+                            else if (data.Response != null)
+                            {
+                                if (data.Response.RawMode)
+                                {
+                                    RawMode = true;
+                                }
+
+                                GotResponse = true;
+                            }
+                            else
+                            {
+                                XmlSerializer xmlSerializer = new(typeof(Data));
+
+                                using StringWriter sww = new();
+                                using XmlWriter writer = XmlWriter.Create(sww);
+
+                                xmlSerializer.Serialize(writer, data);
+
+                                Console.WriteLine(sww.ToString());
+                            }
+                        }
+                    }
+                }
+                catch (BadConnectionException) { }
+
+                Firehose.Configure(StorageType.UFS);
+                Firehose.GetStorageInfo(StorageType.UFS);
+                ReadGPTs(Firehose, StorageType.UFS);
+
+                DumpUFSDevice(Firehose);
+
+                if (Firehose.Reset())
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Emergency programmer test succeeded");
                 }
                 else
                 {
                     Console.WriteLine();
-
-                    QualcommFirehose Firehose = new(Serial);
-
-                    //QualcommFirehoseMMOVIP.ConnectToProgrammerInTestMode(Serial, Firehose);
-
-                    bool RawMode = false;
-                    bool GotResponse = false;
-
-                    try
-                    {
-                        while (!GotResponse)
-                        {
-                            Data[] datas = Firehose.GetFirehoseResponseDataPayloads();
-
-                            foreach (Data data in datas)
-                            {
-                                if (data.Log != null)
-                                {
-                                    Debug.WriteLine("DEVPRG LOG: " + data.Log.Value);
-                                }
-                                else if (data.Response != null)
-                                {
-                                    if (data.Response.RawMode)
-                                    {
-                                        RawMode = true;
-                                    }
-
-                                    GotResponse = true;
-                                }
-                                else
-                                {
-                                    XmlSerializer xmlSerializer = new(typeof(Data));
-
-                                    using StringWriter sww = new();
-                                    using XmlWriter writer = XmlWriter.Create(sww);
-
-                                    xmlSerializer.Serialize(writer, data);
-
-                                    Console.WriteLine(sww.ToString());
-                                }
-                            }
-                        }
-                    }
-                    catch (BadConnectionException) { }
-
-                    Firehose.Configure(StorageType.UFS);
-                    Firehose.GetStorageInfo(StorageType.UFS);
-                    ReadGPTs(Firehose, StorageType.UFS);
-
-                    DumpUFSDevice(Firehose);
-
-                    if (Firehose.Reset())
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("Emergency programmer test succeeded");
-                    }
-                    else
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("Emergency programmer test failed");
-                    }
+                    Console.WriteLine("Emergency programmer test failed");
                 }
             }
             catch (Exception Ex)
@@ -249,10 +256,10 @@ namespace QCEDL.Client
                 Console.WriteLine($"LUN[{i}] Total Blocks: {storageInfo.storage_info.total_blocks}");
                 Console.WriteLine($"LUN[{i}] Block Size: {storageInfo.storage_info.block_size}");
                 Console.WriteLine();
-            }
 
-            LUNStream test = new LUNStream(Firehose, 1, StorageType.UFS);
-            ConvertDD2VHD("testing.vhdx", 4096, test);
+                LUNStream test = new LUNStream(Firehose, i, StorageType.UFS);
+                ConvertDD2VHD($"D:\\HDK8350_00727\\LUN{i}.vhdx", 4096, test);
+            }
         }
 
         /// <summary>
@@ -278,7 +285,7 @@ namespace QCEDL.Client
                 OutputStream = outDisk.Content,
                 SparseCopy = true,
                 SparseChunkSize = (int)SectorSize,
-                BufferSize = (int)SectorSize * 24 // Max 24 sectors at a time
+                BufferSize = (int)SectorSize * 256 // Max 24 sectors at a time
             };
 
             long totalBytes = contentStream.Length;

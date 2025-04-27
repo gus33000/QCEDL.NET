@@ -93,10 +93,10 @@ namespace QCEDL.Client
             long noOverflowBlockStartByteCount = Position - overflowBlockStartByteCount;
 
             // The number of extra bytes to read at the start
-            long extraStartBytes = blockSize - overflowBlockStartByteCount;
+            long extraStartBytes = overflowBlockStartByteCount == 0 ? 0 : blockSize - overflowBlockStartByteCount;
 
             // The number of extra bytes to read at the end
-            long extraEndBytes = blockSize - overflowBlockEndByteCount;
+            long extraEndBytes = overflowBlockEndByteCount == 0 ? 0 : blockSize - overflowBlockEndByteCount;
 
             // The position to end reading from, aligned to the size of blocks (blockSize) (excluding)
             long noOverflowBlockEndByteCount = Position + readBytes + extraEndBytes;
